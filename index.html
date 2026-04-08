@@ -8,6 +8,14 @@
       * {
         font-family: "Comic Sans MS", cursive, sans-serif !important;
         box-sizing: border-box;
+        -webkit-user-drag: none;
+        -khtml-user-drag: none;
+        -moz-user-drag: none;
+        -o-user-drag: none;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
       }
 
       body {
@@ -82,7 +90,7 @@
 
       #hole {
         width: 100%;
-        height: 250px;
+        height: 275px;
         background-color: skyblue;
         position: absolute;
         top: 300px;
@@ -158,15 +166,6 @@
       #character img {
         width: 75px;
         height: 75px;
-        -webkit-user-drag: none;
-        -khtml-user-drag: none;
-        -moz-user-drag: none;
-        -o-user-drag: none;
-        -webkit-user-drag: none;
-        -webkit-user-select: none;
-        -moz-user-select: none;
-        -ms-user-select: none;
-        user-select: none;
       }
 
       #character {
@@ -209,7 +208,7 @@
       }
 
       .restartBtn {
-        background-color: #ff9800; /* สีส้มสดใส */
+        background-color: #ff9800;
         margin-bottom: 10px;
         width: 100%;
       }
@@ -225,7 +224,6 @@
     </style>
   </head>
   <body>
-    <!-- Start Menu -->
     <div class="scene-container">
       <div id="menuPage" class="page startMenu">
         <h1 class="title">My Flappy Chess Game</h1>
@@ -234,7 +232,6 @@
         </button>
       </div>
 
-      <!-- Game -->
       <div id="gamePage" class="page game">
         <button
           class="btn backBtn"
@@ -267,48 +264,54 @@
       const hole = document.getElementById("hole");
       const character = document.getElementById("character");
       const html = document.querySelector("html");
+
       let isPlaying = false;
-      let jumping = 0;
       let score = 0;
       let bestScore = localStorage.getItem("bestScore") || 0;
+
+      let velocity = 0;
+      const gravity = 0.2;
+      const jumpStrength = -5.5;
 
       block.addEventListener("animationiteration", function () {
         let random = Math.random() * 400 + 100;
         hole.style.top = random + "px";
-        score++;
+        if (isPlaying) score++;
       });
 
       html.addEventListener("click", function () {
         if (isPlaying) {
-          jumping = 1;
-          let jumpCount = 0;
-          const jumpInterval = setInterval(function () {
-            const characterTop = parseInt(
-              window.getComputedStyle(character).getPropertyValue("top"),
-            );
-            if (characterTop > 10 && jumpCount < 15) {
-              character.style.top = characterTop - 5 + "px";
-            }
-            if (jumpCount > 20) {
-              clearInterval(jumpInterval);
-              jumping = 0;
-              jumpCount = 0;
-            }
-            jumpCount++;
-          }, 10);
+          velocity = jumpStrength;
         }
       });
 
       setInterval(function () {
         if (isPlaying) {
-          const characterTop = parseInt(
+          const characterTop = parseFloat(
             window.getComputedStyle(character).getPropertyValue("top"),
           );
-          if (characterTop < window.innerHeight - 50 && jumping === 0) {
-            character.style.top = characterTop + 3 + "px";
+          const characterRect = character.getBoundingClientRect();
+          const blockRect = block.getBoundingClientRect();
+          const holeRect = hole.getBoundingClientRect();
+
+          velocity += gravity;
+          let newTop = characterTop + velocity;
+          character.style.top = newTop + "px";
+
+          if (newTop < 0 || newTop > window.innerHeight - 125) {
+            gameOver();
           }
-          if (characterTop > window.innerHeight - 125) {
-            gameOver()
+
+          if (
+            characterRect.right > blockRect.left &&
+            characterRect.left < blockRect.right
+          ) {
+            if (
+              characterRect.top < holeRect.top ||
+              characterRect.bottom > holeRect.bottom
+            ) {
+              gameOver();
+            }
           }
         }
       }, 10);
@@ -317,18 +320,21 @@
         "<img src='https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/Chess_qlt45.svg/960px-Chess_qlt45.svg.png' alt='Chess' />";
 
       document.getElementById("character").innerHTML = chess;
+
       function startGame() {
         const menu = document.getElementById("menuPage");
         const game = document.getElementById("gamePage");
 
         menu.classList.add("slide-left");
         game.classList.add("active");
+
+        score = 0;
+        velocity = 0;
+        character.style.top = "50%";
         isPlaying = true;
 
         html.style.cursor = "pointer";
-        console.log("The game is playin'");
-
-        console.log("Game Scene Active");
+        block.style.animationPlayState = "running";
       }
 
       function backToMenu() {
@@ -345,6 +351,7 @@
       }
 
       function gameOver() {
+        if (!isPlaying) return;
         isPlaying = false;
 
         const goMenu = document.getElementById("gameOverMenu");
@@ -364,12 +371,14 @@
         document.getElementById("gameOverMenu").style.display = "none";
 
         score = 0;
+        velocity = 0;
         character.style.top = "50%";
         isPlaying = true;
 
         block.style.animation = "none";
-        block.offsetHeight; /* trigger reflow */
+        block.offsetHeight;
         block.style.animation = "block 4s infinite linear";
+        block.style.animationPlayState = "running";
       }
     </script>
   </body>
