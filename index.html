@@ -1,0 +1,376 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>My Flappy Chess Game</title>
+    <style>
+      * {
+        font-family: "Comic Sans MS", cursive, sans-serif !important;
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        padding: 0;
+        height: 100vh;
+        background-color: skyblue;
+        color: white;
+        overflow-x: hidden;
+      }
+
+      .scene-container {
+        position: relative;
+        width: 100%;
+        height: 100vh;
+      }
+
+      .page {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+      }
+
+      .slideOut {
+        transition: transform 0.5s ease-in-out;
+        transform: translateX(-100%);
+      }
+
+      .startMenu {
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        height: 80vh;
+        transform: translateX(0);
+      }
+
+      .game {
+        transform: translateX(100%);
+      }
+
+      .startMenu.slide-left {
+        transform: translateX(-100%);
+      }
+
+      .game.active {
+        transform: translateX(0);
+      }
+
+      .title {
+        font-size: 50px;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+      }
+
+      #block {
+        width: 100px;
+        height: 100%;
+        background-color: greenyellow;
+        position: absolute;
+        right: -50px;
+        animation: block 4s infinite linear;
+      }
+
+      #hole {
+        width: 100%;
+        height: 250px;
+        background-color: skyblue;
+        position: absolute;
+        top: 300px;
+        left: 0;
+      }
+
+      @keyframes block {
+        0% {
+          transform: translateX(100vw);
+        }
+        100% {
+          transform: translateX(-100vw);
+        }
+      }
+
+      .btn {
+        border-radius: 5px;
+        border: none;
+        padding: 10px 20px;
+        font-size: large;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease-in-out;
+        box-shadow: 0.5px 0.5px 1px 1px rgba(0, 0, 0, 0.2);
+        color: white;
+      }
+
+      .btn:hover {
+        box-shadow: 0.5px 0.5px 1px 1px rgba(0, 0, 0, 0.3);
+      }
+
+      .startButton {
+        background-color: mediumseagreen;
+      }
+
+      .startButton:hover {
+        background-color: seagreen;
+      }
+
+      .backBtn {
+        position: absolute;
+        background-color: crimson;
+        z-index: 10;
+      }
+
+      .backBtn:hover {
+        background-color: darkred;
+      }
+
+      a {
+        color: white;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        transition: all 0.1s ease-in-out;
+      }
+
+      a:hover {
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+      }
+
+      footer {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        background-color: #333;
+        color: #fff;
+        text-align: center;
+        padding: 10px;
+        font-size: 20px;
+        z-index: 10;
+      }
+
+      #character img {
+        width: 75px;
+        height: 75px;
+        -webkit-user-drag: none;
+        -khtml-user-drag: none;
+        -moz-user-drag: none;
+        -o-user-drag: none;
+        -webkit-user-drag: none;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+      }
+
+      #character {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+      }
+
+      #gameOverMenu {
+        display: none;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 320px;
+        background-color: rgba(255, 255, 255, 0.95);
+        padding: 30px;
+        border-radius: 20px;
+        border: 5px solid #333;
+        box-shadow: 0 10px 0 rgba(0, 0, 0, 0.2);
+        color: #333;
+        z-index: 100;
+      }
+
+      .gameOverTitle {
+        font-size: 40px;
+        margin: 0 0 20px 0;
+        color: crimson;
+        text-transform: uppercase;
+      }
+
+      #gameOverMenu p {
+        font-size: 24px;
+        margin: 10px 0;
+        font-weight: bold;
+      }
+
+      .restartBtn {
+        background-color: #ff9800; /* สีส้มสดใส */
+        margin-bottom: 10px;
+        width: 100%;
+      }
+
+      .restartBtn:hover {
+        background-color: #e68a00;
+      }
+
+      .menuBtn {
+        background-color: #555;
+        width: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Start Menu -->
+    <div class="scene-container">
+      <div id="menuPage" class="page startMenu">
+        <h1 class="title">My Flappy Chess Game</h1>
+        <button class="startButton btn" onclick="startGame()">
+          Start Game
+        </button>
+      </div>
+
+      <!-- Game -->
+      <div id="gamePage" class="page game">
+        <button
+          class="btn backBtn"
+          style="top: 10px; left: 10px"
+          onclick="backToMenu()"
+        >
+          Back
+        </button>
+
+        <div id="block"><div id="hole"></div></div>
+        <div id="character"></div>
+
+        <div id="gameOverMenu">
+          <h2 class="gameOverTitle">YOU DIED!</h2>
+          <p>Score: <span id="score">0</span></p>
+          <p>Best: <span id="bestScore">0</span></p>
+          <button class="btn restartBtn" onclick="restartGame()">
+            Try Again
+          </button>
+          <button class="btn menuBtn" onclick="backToMenu()">Main Menu</button>
+        </div>
+      </div>
+    </div>
+    <footer>
+      <p>Made by <a href="https://github.com/Kaoie-RTP">Ratipat Ongniam</a></p>
+    </footer>
+
+    <script>
+      const block = document.getElementById("block");
+      const hole = document.getElementById("hole");
+      const character = document.getElementById("character");
+      const html = document.querySelector("html");
+      let isPlaying = false;
+      let jumping = 0;
+      let score = 0;
+      let bestScore = localStorage.getItem("bestScore") || 0;
+
+      block.addEventListener("animationiteration", function () {
+        let random = Math.random() * 400 + 100;
+        hole.style.top = random + "px";
+        score++;
+      });
+
+      html.addEventListener("click", function () {
+        if (isPlaying) {
+          jumping = 1;
+          let jumpCount = 0;
+          const jumpInterval = setInterval(function () {
+            const characterTop = parseInt(
+              window.getComputedStyle(character).getPropertyValue("top"),
+            );
+            if (characterTop > 10 && jumpCount < 15) {
+              character.style.top = characterTop - 5 + "px";
+            }
+            if (jumpCount > 20) {
+              clearInterval(jumpInterval);
+              jumping = 0;
+              jumpCount = 0;
+            }
+            jumpCount++;
+          }, 10);
+        }
+      });
+
+      setInterval(function () {
+        if (isPlaying) {
+          const characterTop = parseInt(
+            window.getComputedStyle(character).getPropertyValue("top"),
+          );
+          if (characterTop < window.innerHeight - 50 && jumping === 0) {
+            character.style.top = characterTop + 3 + "px";
+          }
+          if (characterTop > window.innerHeight - 125) {
+            gameOver()
+          }
+        }
+      }, 10);
+
+      const chess =
+        "<img src='https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/Chess_qlt45.svg/960px-Chess_qlt45.svg.png' alt='Chess' />";
+
+      document.getElementById("character").innerHTML = chess;
+      function startGame() {
+        const menu = document.getElementById("menuPage");
+        const game = document.getElementById("gamePage");
+
+        menu.classList.add("slide-left");
+        game.classList.add("active");
+        isPlaying = true;
+
+        html.style.cursor = "pointer";
+        console.log("The game is playin'");
+
+        console.log("Game Scene Active");
+      }
+
+      function backToMenu() {
+        const menu = document.getElementById("menuPage");
+        const game = document.getElementById("gamePage");
+        const goMenu = document.getElementById("gameOverMenu");
+
+        menu.classList.remove("slide-left");
+        game.classList.remove("active");
+        goMenu.style.display = "none";
+
+        isPlaying = false;
+        html.style.cursor = "default";
+      }
+
+      function gameOver() {
+        isPlaying = false;
+
+        const goMenu = document.getElementById("gameOverMenu");
+        goMenu.style.display = "flex";
+
+        document.getElementById("score").innerText = score;
+        if (score > bestScore) {
+          bestScore = score;
+          localStorage.setItem("bestScore", bestScore);
+        }
+        document.getElementById("bestScore").innerText = bestScore;
+
+        block.style.animationPlayState = "paused";
+      }
+
+      function restartGame() {
+        document.getElementById("gameOverMenu").style.display = "none";
+
+        score = 0;
+        character.style.top = "50%";
+        isPlaying = true;
+
+        block.style.animation = "none";
+        block.offsetHeight; /* trigger reflow */
+        block.style.animation = "block 4s infinite linear";
+      }
+    </script>
+  </body>
+</html>
